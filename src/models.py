@@ -1,6 +1,6 @@
 import os
 import sys
-from sqlalchemy import Column, ForeignKey, Integer, String, Enum
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy import create_engine
 from eralchemy2 import render_er
@@ -9,66 +9,48 @@ from enum import Enum as PyEnum
 Base = declarative_base()
 
 
-class TypeFile(PyEnum):
-    VIDEO = "video"
-    IMAGE = "image"
-
 
 class User(Base):
-    __tablename__='user'
+    __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
-    username = Column(String(100), nullable=False)
-    firstname = Column(String(250), nullable=False)
-    lastname = Column(String(250), nullable=False)
-    email = Column(String(250), nullable=False)
-
-
-
-class Follower(Base):
-    __tablename__ = 'follower'
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
-    user_from_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
-    user_to_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
-    user = relationship(User)
-
+    username = Column(String(100), nullable=False, unique=True)
+    profile_description = Column(String(250), nullable=False)
+    password = Column(String(250), nullable=False)
+    email = Column(String(250), nullable=False, unique=True)
+    created_at = Column(DateTime, nullable=False)
+    posts = relationship("Post", back_populates="user")
+    comments = relationship("Comment", back_populates="user")
+    likes = relationship("Like", back_populates="user")
 
 class Post(Base):
     __tablename__ = 'post'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.id'))
+    content = Column(String(500), nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    user = relationship("User", back_populates="posts")
+    comments = relationship("Comment", back_populates="post")
+    likes = relationship("Like", back_populates="post")
 
 class Comment(Base):
     __tablename__ = 'comment'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
     id = Column(Integer, primary_key=True)
-    comment_text = Column(String(250), nullable=False)
-    author_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship(User)
-    post_id = Column(Integer, ForeignKey('post.id'))
-    post = relationship(Post)
+    text = Column(String(250), nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    post_id = Column(Integer, ForeignKey('post.id'), nullable=False)
+    user = relationship("User", back_populates="comments")
+    post = relationship("Post", back_populates="comments")
 
-
-class Media(Base):
-    __tablename__ = 'media'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
+class Like(Base):
+    __tablename__ = 'like'
     id = Column(Integer, primary_key=True)
-    type = Column(Enum(TypeFile), nullable=False)
-    url = Column(String(250), nullable=False)
-    post_id = Column(Integer, ForeignKey('post.id'))
-    post = relationship(Post)
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    post_id = Column(Integer, ForeignKey('post.id'), nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    user = relationship("User", back_populates="likes")
+    post = relationship("Post", back_populates="likes")
 
-    
-    # id = Column(Integer, primary_key=True)
-    # street_name = Column(String(250))
-    # street_number = Column(String(250))
-    # post_code = Column(String(250), nullable=False)
-    # person_id = Column(Integer, ForeignKey('person.id'))
-    # person = relationship(Person)
 
     def to_dict(self):
         return {}
